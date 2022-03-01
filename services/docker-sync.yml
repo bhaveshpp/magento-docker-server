@@ -1,0 +1,42 @@
+version: "2"
+
+options:
+
+  verbose: true
+  compose-file-path: 'docker-compose.yml'
+  cli_mode: 'auto'
+  max_attempt: 3000
+
+syncs:
+
+  project-magento243-sync:
+    notify_terminal: true
+    src: '../projects/magento243'
+    sync_strategy: 'unison'
+    sync_excludes: [
+      '.git',
+      '.gitignore',
+      'node_modules',
+      'var/cache',
+      'var/page_cache',
+      'var/session',
+      '.DS_Store'
+    ]
+    sync_userid: '33'
+    max_attempt: 10
+    
+  project-magento243p1-sync:
+    notify_terminal: true
+    src: '../projects/magento243p1'
+    sync_strategy: 'unison'
+    sync_excludes: [
+      '.git',
+      '.gitignore',
+      'node_modules',
+      'var/cache',
+      'var/page_cache',
+      'var/session',
+      '.DS_Store'
+    ]
+    sync_userid: '33'
+    max_attempt: 10

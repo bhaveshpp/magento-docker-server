@@ -1,0 +1,5 @@
+/services/elasticsearch/data/*
+/services/mysql/data/*
+/projects/*
+/services/.docker-sync/*
+.DS_Store

@@ -1,0 +1,31 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  elasticsearch:
+    image: elasticsearch:7.9.1
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    mem_limit: 4g
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - /Users/bhavesh/Documents/docker-server/services/elasticsearch/data:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+    
+networks:
+  elastic:
+    driver: bridge
