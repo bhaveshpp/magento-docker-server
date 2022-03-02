@@ -40,3 +40,19 @@ syncs:
     ]
     sync_userid: '33'
     max_attempt: 10
+    
+  project-magento234-sync:
+    notify_terminal: true
+    src: '../projects/magento234'
+    sync_strategy: 'unison'
+    sync_excludes: [
+      '.git',
+      '.gitignore',
+      'node_modules',
+      'var/cache',
+      'var/page_cache',
+      'var/session',
+      '.DS_Store'
+    ]
+    sync_userid: '33'
+    max_attempt: 10

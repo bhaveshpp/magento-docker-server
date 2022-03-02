@@ -2,8 +2,8 @@
 
 ## Steps to configure 
 
-- clone this ripository.
-- [x] Change data path for elastic search and mysql
+- Clone this ripository.
+- Change data path for elastic search and mysql
 
 `docker-server/services/elasticsearch/docker-compose.yml`
 
@@ -30,7 +30,7 @@
       
 ```
 
-- [x] Now start elasticsearch and mysql services 
+- Now start elasticsearch and mysql services 
 
 ```bash
 
@@ -47,7 +47,7 @@ it will download and install elasticsearch,mysql image and start the container a
 
 ## Add new project
 
-- [x] add new node under `syncs`.
+- Add new node under `syncs`.
 
 `docker-server/services/docker-sync.yml`
 
@@ -68,7 +68,7 @@ it will download and install elasticsearch,mysql image and start the container a
     sync_userid: '33'
     max_attempt: 10
 ```
-- [x] add volume under php and nginx
+- Add volume under php and nginx
 
 `docker-server/services/docker-compose.yml`
 
@@ -99,7 +99,7 @@ volumes:
 
 ```
 
-- [x] add new host in `/etc/hosts` in local machin
+- Add new host in `/etc/hosts` in local machin
 
 ```bash
 
@@ -123,9 +123,9 @@ use any editor for edit
 
 ```
 
-- [x] Test after add new host using `ping magento2443p1.local`
+- Test after add new host using `ping magento2443p1.local`
 
-- [x] Add virtual host in `nginx` conf file
+- Add virtual host in `nginx` conf file
 
 `docker-server/services/nginx/conf.d/projects.conf`
 
@@ -198,7 +198,7 @@ server {
 > if you want to compose up without start sync then set volume `external` value to `false` at here: `docker-server/services/docker-compose.yml`
 > after start sync you can set this value to `true`
 
-- [x] Start sync and compose up to start nginx and php container
+- Start sync and compose up to start nginx and php container
 
 ```bash
 
@@ -209,7 +209,7 @@ docker-compose up -d
 
 ```
 
-- now login into `phpfpm` container and [download](https://getcomposer.org/download/) `composer.phar` and move it to `/use/local/bin/composer` to run installer
+- Now login into `phpfpm` container and [download](https://getcomposer.org/download/) `composer.phar` and move it to `/use/local/bin/composer` to run installer
 
 ```bash
 
@@ -219,7 +219,7 @@ cd /projects/magento243
 mv composer.phar /usr/local/bin/composer
 composer
 
-composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition:243 .
+composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition:2.4.3 .
 
 chmod -R 777 var/ generated/ pub/
 
@@ -284,3 +284,137 @@ chmod -R 777 var/ generated/ pub/
 
 > you can create database using [adminer](https://www.adminer.org/)  http://localhost:8080.
 
+## Add project with diffrent php version
+
+- Add new `sync` magento234.
+
+`docker-server/services/docker-sync.yml`
+```yml 
+  project-magento234-sync:
+    notify_terminal: true
+    src: '../projects/magento234'
+    sync_strategy: 'unison'
+    sync_excludes: [
+      '.git',
+      '.gitignore',
+      'node_modules',
+      'var/cache',
+      'var/page_cache',
+      'var/session',
+      '.DS_Store'
+    ]
+    sync_userid: '33'
+    max_attempt: 10
+```
+- Edit `phpfpm` container 
+
+`docker-server/services/docker-compose.yml`
+```yml
+...
+  phpfpm:
+    ...
+
+    image: php:7.3-fpm
+    # image: php:7.4-fpm
+
+    ...
+
+    build:
+      context: ./php/73/ 
+      # context: ./php/74/ 
+      dockerfile: Dockerfile
+
+    ...
+...
+```
+
+- Add new folder `projects/magento234` and add new volume information in compose file.
+
+```yml
+version: '3.8'
+
+services:
+
+  nginx:
+    ...
+
+    volumes:
+      ...
+
+      - project-magento234-sync:/projects/magento234:nocopy,delegated
+      
+      ...
+
+    links:
+      - phpfpm
+
+  phpfpm:
+    ...
+
+    volumes:
+      ...
+
+      - project-magento234-sync:/projects/magento234:nocopy,delegated
+
+volumes:
+  ...
+
+  project-magento234-sync:
+    external: true
+
+```
+
+- Restart `sync` and rebuilt container.
+
+```bash
+
+cd docker-server/
+cd services
+docker-sync restart
+docker-compose down
+docker-compose up -d
+
+```
+
+> Note: When you rebuilt phpfpm then composer will automatically remove so reinstall it. `mv composer.phar /usr/local/bin/composer`
+
+- Login to `phpfpm` and setup project
+
+```bash
+composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition:2.3.4 . --ignore-platform-reqs
+
+
+```
+
+- Add new host in `/etc/hosts` file and add server detail in `nginx` server config file and restart server 
+
+`docker-server/services/nginx/conf.d/projects.conf`
+```conf
+server {
+
+    server_name magento234.local;
+    index index.php;
+
+    set $MAGE_ROOT /projects/magento234;
+    set $MAGE_MODE production;
+
+    # root /projects/magento234;
+
+    access_log /var/log/nginx/magento234-access.log;
+    error_log /var/log/nginx/magento234-error.log;
+
+    include /projects/magento234/nginx.conf.sample;
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass phpfpm:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+    }
+
+    listen 80;
+    listen [::]:80;
+}
+```
