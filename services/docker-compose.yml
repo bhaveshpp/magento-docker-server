@@ -11,15 +11,15 @@ services:
       - 443:443
     mem_limit: 2g
     volumes:
-      - magento243-sync:/projects/magento243:nocopy,delegated
-      - magento243p1-sync:/projects/magento243p1:nocopy,delegated
+      - project-magento243-sync:/projects/magento243:nocopy,delegated
+      - project-magento243p1-sync:/projects/magento243p1:nocopy,delegated
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/magento2-cors.conf:/etc/nginx/magento2-cors.conf
     links:
-      - phpfpm74
+      - phpfpm
 
-  phpfpm74:
-    container_name: phpfpm74
+  phpfpm:
+    container_name: phpfpm
     image: php:7.4-fpm
     restart: unless-stopped
     ports:
@@ -29,11 +29,12 @@ services:
       context: ./php/74/ 
       dockerfile: Dockerfile
     volumes:
-      - magento243-sync:/projects/magento243:nocopy,delegated
-      - magento243p1-sync:/projects/magento243p1:nocopy,delegated
+      - project-magento243-sync:/projects/magento243:nocopy,delegated
+      - project-magento243p1-sync:/projects/magento243p1:nocopy,delegated
 
 volumes:
-  magento243-sync:
-    external: false
-  magento243p1-sync:
-    external: false
+  project-magento243-sync:
+    external: true
+
+  project-magento243p1-sync:
+    external: true

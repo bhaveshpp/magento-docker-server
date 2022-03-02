@@ -2,7 +2,8 @@
 
 ## Steps to configure 
 
-- [x] first change data path for elastic search and mysql
+- clone this ripository.
+- [x] Change data path for elastic search and mysql
 
 `docker-server/services/elasticsearch/docker-compose.yml`
 
@@ -33,14 +34,16 @@
 
 ```bash
 
-cd docker-server/services/elasticsearch
+cd docker-server/
+cd services/
+cd elasticsearch/
 docker-compose up -d
 cd ../mysql/
 docker-compose up -d
 
 ```
 
-it will download and install elasticsearch,mysql and start the service automatically.
+it will download and install elasticsearch,mysql image and start the container automatically.
 
 ## Add new project
 
@@ -77,7 +80,7 @@ services:
     ...
     volumes:
       ...
-      - magento243p1-sync:/magento243p1:nocopy,delegated
+      - project-magento243p1-sync:/magento243p1:nocopy,delegated
       ...
     ...
 
@@ -85,12 +88,12 @@ services:
     ...
     volumes:
       ...
-      - magento243p1-sync:/magento243p1:nocopy,delegated
+      - project-magento243p1-sync:/magento243p1:nocopy,delegated
       ...
 
 volumes:
   ...
-  magento243p1-sync:
+  project-magento243p1-sync:
     external: true
   ...
 
@@ -124,12 +127,40 @@ use any editor for edit
 
 - [x] Add virtual host in `nginx` conf file
 
-`docker-server/services/nginx/conf.d/magento243p1.local.conf`
+`docker-server/services/nginx/conf.d/projects.conf`
 
 ```conf
 upstream fastcgi_backend {
 	server host.docker.internal:9000;
-	server phpfpm74:9000;
+	server phpfpm:9000;
+}
+
+server {
+
+    server_name magento243.local;
+    index index.php;
+
+    set $MAGE_ROOT /projects/magento243;
+    set $MAGE_MODE production;
+
+    root /projects/magento243;
+
+    access_log /var/log/nginx/magento243-access.log;
+    error_log /var/log/nginx/magento243-error.log;
+
+    # include /projects/magento243/nginx.conf.sample;
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass phpfpm:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+    }
+
+    listen 80;
+    listen [::]:80;
 }
 
 server {
@@ -137,17 +168,19 @@ server {
     server_name magento243p1.local;
     index index.php;
 
-    set $MAGE_ROOT /magento243p1;
+    set $MAGE_ROOT /projects/magento243p1;
     set $MAGE_MODE production;
+
+    root /projects/magento243p1;
 
     access_log /var/log/nginx/magento243p1-access.log;
     error_log /var/log/nginx/magento243p1-error.log;
 
-    include /magento243p1/nginx.conf.sample;
+    # include /projects/magento243p1/nginx.conf.sample;
     location ~ \.php$ {
         try_files $uri =404;
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass phpfpm74:9000;
+        fastcgi_pass phpfpm:9000;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -160,28 +193,94 @@ server {
 
 ```
 
-> Note: When you run compose up command for first time you will get this error.
+> Note: First start sync when you run compose up command for first time you will get this error.
 > `external volume "" not found`
-> then set volume `external` value to `false` at here: `docker-server/services/docker-compose.yml`
+> if you want to compose up without start sync then set volume `external` value to `false` at here: `docker-server/services/docker-compose.yml`
 > after start sync you can set this value to `true`
 
-- [x] Start sync
+- [x] Start sync and compose up to start nginx and php container
 
 ```bash
 
-cd docker-server/services
+cd docker-server/
+cd services
 docker-sync start
+docker-compose up -d
 
 ```
 
-## Add project with diffrent php version
-
-
-
-
+- now login into `phpfpm` container and [download](https://getcomposer.org/download/) `composer.phar` and move it to `/use/local/bin/composer` to run installer
 
 ```bash
+
+docker exec -it phpfpm bash
+cd /projects/magento243
+
+mv composer.phar /usr/local/bin/composer
+composer
+
+composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition:243 .
+
+chmod -R 777 var/ generated/ pub/
+
+```
+
+- Configure nginx conf 
+
+```conf
+
+...
+
+server {
+
+    ...
+
+    # root /projects/magento243;
+
+    ...
+
+    include /projects/magento243/nginx.conf.sample;
+    ...
+}
+...
+
+```
+
+- restart `nginx` server.
+
+```bash
+
+docker exec -it nginx bash
+service nginx restart
+
+```
+
+- Now check the browser http://magento243p1.local/setup/ 
+- Create database and install magento.
+
+```bash
+
+docker exec -it mysql bash
+
+mysql -u root -prootroot
+
+create database magento243;
+
+exit
+
+exit
+
+docker exec -it phpfpm bash
+
+cd /projects/magento243p1/
 
 php -d memory_limit=-1 bin/magento setup:install --base-url=http://magento243p1.local/ --db-host=host.docker.internal --db-name=magento243p1 --db-user=root --db-password=rootroot --admin-firstname=Magento --admin-lastname=User --admin-email=user@example.com --admin-user=admin --admin-password=admin@123 --language=en_US --currency=USD --timezone=America/Chicago --use-rewrites=1 --elasticsearch-host=host.docker.internal
 
+bin/magento deploy:mode:set developer
+
+chmod -R 777 var/ generated/ pub/
+
 ```
+
+> you can create database using [adminer](https://www.adminer.org/)  http://localhost:8080.
+
