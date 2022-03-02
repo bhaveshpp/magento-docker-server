@@ -14,6 +14,7 @@ services:
       - project-magento243-sync:/projects/magento243:nocopy,delegated
       - project-magento243p1-sync:/projects/magento243p1:nocopy,delegated
       - project-magento234-sync:/projects/magento234:nocopy,delegated
+      - project-projectx-sync:/projects/projectx:nocopy,delegated
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/magento2-cors.conf:/etc/nginx/magento2-cors.conf
     links:
@@ -32,11 +33,16 @@ services:
       context: ./php/74/ 
       dockerfile: Dockerfile
     volumes:
+      - project-other-sync:/other:nocopy,delegated
       - project-magento243-sync:/projects/magento243:nocopy,delegated
       - project-magento243p1-sync:/projects/magento243p1:nocopy,delegated
       - project-magento234-sync:/projects/magento234:nocopy,delegated
+      - project-projectx-sync:/projects/projectx:nocopy,delegated
 
 volumes:
+  project-other-sync:
+    external: true
+
   project-magento243-sync:
     external: true
 
@@ -44,4 +50,7 @@ volumes:
     external: true
 
   project-magento234-sync:
+    external: true
+
+  project-projectx-sync:
     external: true

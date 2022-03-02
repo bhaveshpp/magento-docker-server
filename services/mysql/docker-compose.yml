@@ -13,8 +13,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootroot
     volumes:
-      - /Users/bhavesh/Documents/docker-server/services/mysql/dump:/dump:nocopy,delegated
-      - /Users/bhavesh/Documents/docker-server/services/mysql/data:/var/lib/mysql
+      - ./dump:/dump:nocopy,delegated
+      - ./data:/var/lib/mysql
 
   adminer:
     image: adminer
