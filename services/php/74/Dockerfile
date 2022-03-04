@@ -5,3 +5,4 @@ RUN install-php-extensions mysqli mcrypt bcmath curl intl json mbstring pdo_mysq
 RUN install-php-extensions xsl sockets
 RUN apt-get update && apt-get upgrade -y
 RUN apt install git -y
+RUN echo 'export PS1="[phpfpm74 \w] \$ "' >> ~/.bashrc

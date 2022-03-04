@@ -1,6 +1,8 @@
 /services/elasticsearch/data/*
 /services/mysql/data/*
+/services/mysql/dump/*
 /services/.docker-sync/*
-/services/php/other/ssh
-ß/projects/*
+/services/php/other/*
+!/services/php/other/composer.phar
+/projects/*
 .DS_Store

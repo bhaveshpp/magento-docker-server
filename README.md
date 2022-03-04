@@ -418,3 +418,15 @@ server {
     listen [::]:80;
 }
 ```
+
+### Other 
+
+```bash
+cp /other/composer.phar /usr/local/bin/composer
+ssh-keygen
+cp /other/ssh/id_rsa* /root/.ssh/
+ssh -T git@bitbucket.org
+composer install --ignore-platform-reqs
+apt install cron -y
+
+```
